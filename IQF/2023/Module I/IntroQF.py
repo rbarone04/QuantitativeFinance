@@ -80,6 +80,89 @@ class ModuleI():
         d = dt.datetime.strptime(data,'%Y%m%d')
         return d.strftime('%d/%m/%Y')
     
+    def why_yield(self,height=800, width=1600):
+        btp = pd.read_csv('data/btp_italia2.csv', sep=';')
+        btp['Maturity'] = pd.to_datetime(btp['Maturity'], format='%d/%m/%Y')
+        
+        # Definisco il range per le maturity
+        min_maty = min(btp['Maturity'])
+        min_xRange = dt.datetime(min_maty.year-1, min_maty.month, min_maty.day)
+        max_maty = max(btp['Maturity'])
+        max_xRange = dt.datetime(max_maty.year+1, max_maty.month, max_maty.day)
+        btp_price = go.Scatter(x=btp['Maturity'],y=btp['Price'],
+                               hovertemplate='<br><b>Price</b>: %{y:.2f}<br>'+
+                               '<b>%{text}</b><extra></extra>',
+                               text=btp['Description'],
+                               name='Bonds price', mode='markers', marker=dict(color='Red', size=5),
+                               line=dict(color='Red', width=1, dash='dot'),
+                               visible=True)
+        
+        btp_yield = go.Scatter(x=btp['Maturity'],y=btp['Yield'],
+                               hovertemplate='<br><b>Yield</b>: %{y:.4p}<br>'+
+                               '<b>%{text}</b><extra></extra>',
+                               text=btp['Description'],
+                               name='Bonds YtM', mode='markers', marker=dict(color='Green', size=5),
+                               line=dict(color='Green', width=1, dash='dot'),
+                               visible=False)
+        
+        
+        f = go.FigureWidget()
+        f.add_trace(btp_yield)
+        f.add_trace(btp_price)
+        f['layout']['xaxis'] = {'range':[min_xRange,max_xRange],
+                                     'title': 'Maturity', 'titlefont':{'size': 15}}
+        f['layout']['yaxis'] = {'range':[90,160],'fixedrange': False,
+                                'title': 'Price','titlefont':{'size': 15},
+                                'hoverformat': '.2f'}
+        f['layout']['title'] = {'text':'Why yields (instead of prices)?','font':{'size': 25},'x':0.5,'xanchor':'center'}
+        f['layout']['updatemenus']= list([
+            dict(type="buttons",
+                 active=-1,
+                 buttons=list([
+                    dict(label = 'Prices',
+                         method = 'update',
+                         args = [{'visible':[False,True]},
+                                 {'yaxis':{'range':[90,160],'fixedrange': False,
+                                           'title': 'Price','titlefont':{'size': 15},
+                                           'hoverformat': '.2f'}}
+                                ]
+                        ),
+                    dict(label = 'Yields',
+                         method = 'update',
+                         args = [{'visible':[True,False]},
+                                 {'yaxis':{'range':[-0.005,0.0225],'fixedrange': False,
+                                           'title': 'Yield-to-Maturity','tickformat': '.2p',
+                                           'titlefont':{'size': 15},'hoverformat': '.4p'}}
+                                ]
+                        )
+                 ]),
+                direction='right',
+                pad = {'r': 10, 't': 87},
+                showactive = True,
+                x = 0.5,
+                xanchor = 'center',
+                y = 0.1,
+                yanchor = 'top'
+            ),
+            dict(type="buttons",
+                 active=-1,
+                 buttons=list([dict(label = 'Marker',method = 'update',args = [{'mode':['markers','markers']}]),
+                               dict(label = 'Marker+Lines',method = 'update',args = [{'mode':['markers+lines','markers+lines']}]),
+                               dict(label = 'Line',method = 'update',args = [{'mode':['lines','lines']}])
+                              ]),
+                direction='right',
+                pad = {'r': 10, 't': 87},
+                showactive = True,
+                x = 0.5,
+                xanchor = 'center',
+                y = 0.0,
+                yanchor = 'top'
+            )
+        ])
+        f.update_layout(showlegend=False, template ='plotly_dark',height=height, width=width)
+        
+        return f
+    
     def get_fancy_animation(self,height=800, width=1600, duration = 100):
         # Imposto una palette di colori 
         colors = px.colors.qualitative.Alphabet
